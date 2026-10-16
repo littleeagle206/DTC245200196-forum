@@ -1,0 +1,66 @@
+# =============================================================
+# Luật cảnh báo dựa trên METRICS (Prometheus -> Alertmanager)
+# =============================================================
+groups:
+  - name: forum-availability
+    rules:
+      - alert: ServiceDown
+        expr: up{job!="loki"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Dịch vụ {{ $labels.job }} không phản hồi"
+          description: "Prometheus không thu thập được metrics từ {{ $labels.instance }} trong hơn 1 phút."
+
+      - alert: MySQLDown
+        expr: mysql_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL ngừng hoạt động"
+          description: "mysqld-exporter không kết nối được tới MySQL."
+
+      - alert: HighHttp5xxRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(http_requests_total[5m])), 0.001) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tỉ lệ lỗi 5xx của Forum vượt 5%"
+          description: "Tỉ lệ hiện tại: {{ $value | humanizePercentage }}"
+
+  - name: forum-resources
+    rules:
+      - alert: ContainerHighCPU
+        expr: sum by (name) (rate(container_cpu_usage_seconds_total{name=~"forum-.+"}[2m])) > 0.8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} dùng CPU cao"
+          description: "CPU đang ở mức {{ $value | humanizePercentage }} của 1 core."
+
+      - alert: ContainerHighMemory
+        expr: |
+          container_memory_working_set_bytes{name=~"forum-.+"}
+            / (container_spec_memory_limit_bytes{name=~"forum-.+"} > 0) > 0.9
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} sắp hết RAM giới hạn"
+          description: "Đang dùng {{ $value | humanizePercentage }} giới hạn bộ nhớ."
+
+  - name: forum-security-metrics
+    rules:
+      - alert: LoginFailureSpike
+        expr: sum(increase(forum_login_failed_total[2m])) > 10
+        labels:
+          severity: warning
+        annotations:
+          summary: "Số lần đăng nhập thất bại tăng đột biến"
+          description: "{{ $value | printf \"%.0f\" }} lần đăng nhập thất bại trong 2 phút (metrics ứng dụng)."

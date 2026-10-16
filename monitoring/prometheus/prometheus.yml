@@ -1,0 +1,57 @@
+# =============================================================
+# Prometheus - thu thập metrics định kỳ (scrape) từ các thành phần
+# =============================================================
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: forum
+
+# Gửi cảnh báo sang Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - /etc/prometheus/alert.rules.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Ứng dụng Forum (prom-client) - metrics HTTP, đăng nhập, bài viết
+  - job_name: forum-app
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["app:3000"]
+
+  # Container (CPU, RAM, network của từng container)
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  # Máy chủ (VM)
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # Web server Nginx
+  - job_name: nginx
+    static_configs:
+      - targets: ["nginx-exporter:9113"]
+
+  # Cơ sở dữ liệu MySQL
+  - job_name: mysql
+    static_configs:
+      - targets: ["mysqld-exporter:9104"]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  # Hệ thống log (commit 3) - nếu chưa chạy Loki thì target này DOWN, không ảnh hưởng
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]

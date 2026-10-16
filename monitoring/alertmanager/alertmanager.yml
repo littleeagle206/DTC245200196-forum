@@ -1,0 +1,43 @@
+# =============================================================
+# Alertmanager - nhận cảnh báo từ Prometheus và Loki Ruler,
+# gom nhóm, chống trùng lặp và gửi thông báo.
+# Xem cảnh báo tại: http://<IP-may-ao>:9093
+# =============================================================
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: default
+  group_by: ["alertname", "client_ip"]
+  group_wait: 10s        # chờ 10s để gom các cảnh báo cùng nhóm
+  group_interval: 1m
+  repeat_interval: 1h
+  routes:
+    - matchers:
+        - severity="critical"
+      receiver: default
+      group_wait: 5s
+
+receivers:
+  # Receiver mặc định: cảnh báo hiển thị trên giao diện Alertmanager và Grafana.
+  - name: default
+    # ---- (TÙY CHỌN, ĐIỂM CỘNG) Gửi cảnh báo về Telegram ----
+    # 1. Chat với @BotFather -> /newbot -> lấy bot_token
+    # 2. Nhắn 1 tin cho bot, mở https://api.telegram.org/bot<TOKEN>/getUpdates để lấy chat.id
+    # 3. Bỏ dấu # ở các dòng dưới, điền token/chat_id rồi: docker compose restart alertmanager
+    # telegram_configs:
+    #   - bot_token: "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+    #   chat_id: 123456789
+    #   parse_mode: HTML
+    #   send_resolved: true
+    #   message: |-
+    #     {{ range .Alerts }}<b>[{{ .Status | toUpper }}] {{ .Labels.alertname }}</b>
+    #     Mức độ: {{ .Labels.severity }}
+    #     {{ .Annotations.summary }}
+    #     {{ .Annotations.description }}
+    #     {{ end }}
+
+inhibit_rules:
+  # Khi MySQL đã sập thì không cần báo thêm lỗi 5xx của ứng dụng
+  - source_matchers: ['alertname="MySQLDown"']
+    target_matchers: ['alertname="HighHttp5xxRate"']

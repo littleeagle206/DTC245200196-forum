@@ -1,0 +1,22 @@
+# Grafana tự tạo datasource khi khởi động (không cần thêm bằng tay)
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      manageAlerts: true
+      alertmanagerUid: alertmanager
+      timeInterval: 15s
+
+  - name: Alertmanager
+    type: alertmanager
+    uid: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    jsonData:
+      implementation: prometheus
+      handleGrafanaManagedAlerts: false
