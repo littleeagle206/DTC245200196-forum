@@ -1,0 +1,43 @@
+# =============================================================
+# PHẦN 3 (COMMIT 3): Log tập trung Loki + Promtail
+#   - Promtail đọc log stdout/stderr của mọi container qua Docker API
+#   - Loki lưu log, Grafana truy vấn bằng LogQL
+#   - Loki Ruler đánh giá luật cảnh báo trên log -> gửi sang Alertmanager
+# =============================================================
+services:
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: forum-loki
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - ./monitoring/loki/rules:/etc/loki/rules:ro
+      - loki_data:/loki
+    networks:
+      - monitoring
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+
+  promtail:
+    image: grafana/promtail:3.2.1
+    container_name: forum-promtail
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/promtail/promtail-config.yaml
+    volumes:
+      - ./monitoring/promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+      # Đọc danh sách container và log qua Docker API (chỉ đọc)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    networks:
+      - monitoring
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+
+volumes:
+  loki_data:

@@ -1,0 +1,59 @@
+# =============================================================
+# Promtail - thu thập log từ tất cả container của project "forum"
+# và đẩy về Loki. Gắn nhãn (label) để truy vấn bằng LogQL.
+# =============================================================
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=forum"]
+    relabel_configs:
+      # container = tên container (vd: forum-app, forum-nginx)
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: container
+      # service = tên service trong docker-compose (vd: app, nginx, mysql)
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: service
+      # job = tên service (để dùng được cả cú pháp {job="nginx"})
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: job
+      # stream = stdout / stderr
+      - source_labels: ["__meta_docker_container_log_stream"]
+        target_label: stream
+
+    pipeline_stages:
+      # Log ứng dụng (JSON): tách level và event thành label
+      - match:
+          selector: '{service="app"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  event: event
+            - labels:
+                level:
+                event:
+      # Access log Nginx (JSON): tách mã trạng thái HTTP thành label
+      - match:
+          selector: '{service="nginx"}'
+          stages:
+            - json:
+                expressions:
+                  status: status
+            - labels:
+                status:

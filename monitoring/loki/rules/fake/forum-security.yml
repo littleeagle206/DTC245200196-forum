@@ -1,0 +1,48 @@
+# =============================================================
+# Luật cảnh báo AN TOÀN THÔNG TIN dựa trên LOG (Loki Ruler -> Alertmanager)
+# =============================================================
+groups:
+  - name: forum-security-logs
+    interval: 30s
+    rules:
+      # SỰ CỐ CHÍNH: tấn công dò mật khẩu (brute-force) vào trang đăng nhập
+      - alert: BruteForceLoginDetected
+        expr: |
+          sum by (client_ip) (
+            count_over_time({service="app", event="LOGIN_FAILED"} | json [1m])
+          ) > 5
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Nghi ngờ tấn công brute-force từ IP {{ $labels.client_ip }}"
+          description: "IP {{ $labels.client_ip }} đăng nhập thất bại {{ $value }} lần trong 1 phút."
+
+      # Nginx đã phải chặn (HTTP 429) nhiều request của 1 IP
+      - alert: RateLimitTriggered
+        expr: |
+          sum by (remote_addr) (
+            count_over_time({service="nginx", status="429"} | json [1m])
+          ) > 5
+        for: 0s
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Nginx chặn rate-limit IP {{ $labels.remote_addr }}"
+          description: "{{ $value }} request bị trả về 429 trong 1 phút."
+
+      # Phát hiện payload SQL Injection / XSS / Path traversal
+      - alert: SuspiciousInputDetected
+        expr: |
+          sum by (client_ip) (
+            count_over_time({service="app", event="SUSPICIOUS_INPUT"} | json [5m])
+          ) > 0
+        for: 0s
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Phát hiện dữ liệu nghi tấn công từ IP {{ $labels.client_ip }}"
+          description: "{{ $value }} request chứa mẫu SQLi/XSS trong 5 phút."
