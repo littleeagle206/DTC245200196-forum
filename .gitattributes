@@ -1,0 +1,5 @@
+# Luôn dùng xuống dòng LF (Linux) cho mọi file text -> tránh lỗi "\r" khi chạy .sh trên máy ảo
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.jpg binary

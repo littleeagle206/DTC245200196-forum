@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+<h1>Viết bài mới</h1>
+<% if (error) { %><div class="flash flash-warn"><%= error %></div><% } %>
+<form class="card form" action="/posts" method="post">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <label>Chủ đề
+    <select name="category_id" required>
+      <option value="">-- Chọn chủ đề --</option>
+      <% categories.forEach(function (c) { %>
+        <option value="<%= c.id %>" <%= String(form.category_id) === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
+      <% }) %>
+    </select>
+  </label>
+  <label>Tiêu đề
+    <input name="title" required minlength="5" maxlength="200" value="<%= form.title || '' %>">
+  </label>
+  <label>Nội dung
+    <textarea name="content" rows="10" required minlength="10"><%= form.content || '' %></textarea>
+  </label>
+  <button class="btn btn-primary">Đăng bài</button>
+</form>
+<%- include('partials/footer') %>

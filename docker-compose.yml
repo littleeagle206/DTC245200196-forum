@@ -1,0 +1,127 @@
+# =============================================================
+# PHẦN 1 (COMMIT 1): Ứng dụng web + MySQL + phpMyAdmin + Nginx reverse proxy
+# Đề 15 - Diễn đàn / Cộng đồng (Forum)
+# =============================================================
+name: forum
+
+services:
+  # ---------------- Cơ sở dữ liệu ----------------
+  mysql:
+    image: mysql:8.4
+    container_name: forum-mysql
+    restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Chua dat MYSQL_ROOT_PASSWORD trong .env}
+      MYSQL_DATABASE: forum
+      # 2 biến dưới được script mysql/init/02-users.sh dùng để tạo user quyền hạn chế
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Chua dat DB_APP_PASSWORD trong .env}
+      DB_EXPORTER_PASSWORD: ${DB_EXPORTER_PASSWORD:?Chua dat DB_EXPORTER_PASSWORD trong .env}
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - backend                      # chỉ nằm trong mạng nội bộ, KHÔNG publish cổng 3306
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+
+  # ---------------- Ứng dụng Forum (Node.js) ----------------
+  app:
+    build: ./app
+    image: forum-app:1.0
+    container_name: forum-app
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: forum
+      DB_USER: forum_app             # user chỉ có quyền SELECT/INSERT/UPDATE/DELETE
+      DB_PASSWORD: ${DB_APP_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET:?Chua dat SESSION_SECRET trong .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Chua dat ADMIN_PASSWORD trong .env}
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    # ---- Hardening container ----
+    user: "1000:1000"                # non-root (user node)
+    read_only: true                  # filesystem chỉ đọc
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL                          # bỏ toàn bộ Linux capabilities
+    security_opt:
+      - no-new-privileges:true       # không cho leo thang đặc quyền
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 100
+
+  # ---------------- Công cụ quản trị DB ----------------
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: forum-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 20M
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+    depends_on:
+      - mysql
+    networks:
+      - frontend
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+
+  # ---------------- Nginx Reverse Proxy ----------------
+  nginx:
+    image: nginxinc/nginx-unprivileged:1.27-alpine   # bản Nginx chạy non-root (uid 101)
+    container_name: forum-nginx
+    restart: unless-stopped
+    ports:
+      - "80:8080"      # HTTP  -> tự chuyển hướng sang HTTPS
+      - "443:8443"     # HTTPS -> website Forum
+      - "8443:9443"    # HTTPS -> phpMyAdmin (có thêm Basic Auth)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/htpasswd:/etc/nginx/htpasswd:ro
+    depends_on:
+      - app
+      - phpmyadmin
+    networks:
+      - frontend
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+
+# ---------------- Network Isolation ----------------
+networks:
+  frontend:            # Nginx <-> app, phpMyAdmin
+  backend:
+    internal: true     # Mạng nội bộ: MySQL không ra Internet, không truy cập được từ bên ngoài
+  monitoring:          # Prometheus, Grafana, Loki... (dùng ở commit 2, 3)
+
+volumes:
+  mysql_data:

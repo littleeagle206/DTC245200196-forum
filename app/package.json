@@ -1,0 +1,22 @@
+{
+  "name": "forum-app",
+  "version": "1.0.0",
+  "description": "Website Dien dan / Cong dong (Forum) - De 15 TKQT HTPM",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "express-mysql-session": "^3.0.3",
+    "express-session": "^1.18.1",
+    "mysql2": "^3.11.4",
+    "prom-client": "^15.1.3"
+  }
+}

@@ -1,0 +1,16 @@
+# Bí mật - KHÔNG đưa lên GitHub
+.env
+nginx/certs/*.key
+nginx/certs/*.crt
+nginx/certs/*.pem
+nginx/htpasswd
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Hệ điều hành / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,42 @@
+<%- include('partials/header') %>
+<section class="hero">
+  <h1>Diễn đàn Cộng đồng</h1>
+  <p>Nơi trao đổi, hỏi đáp và chia sẻ kiến thức.</p>
+  <div class="stats">
+    <div><b><%= stats.users %></b><span>thành viên</span></div>
+    <div><b><%= stats.posts %></b><span>bài viết</span></div>
+    <div><b><%= stats.comments %></b><span>bình luận</span></div>
+  </div>
+</section>
+
+<div class="grid">
+  <section>
+    <h2>Bài viết mới nhất</h2>
+    <% if (!posts.length) { %><p class="muted">Chưa có bài viết nào.</p><% } %>
+    <ul class="list">
+      <% posts.forEach(function (p) { %>
+        <li class="card">
+          <a class="title" href="/p/<%= p.id %>"><%= p.title %></a>
+          <div class="meta">
+            <a class="tag" href="/c/<%= p.slug %>"><%= p.category %></a>
+            bởi <b><%= p.username %></b> · <%= new Date(p.created_at).toLocaleString('vi-VN') %>
+            · 👁 <%= p.views %> · 💬 <%= p.comment_count %>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+  <aside>
+    <h2>Chủ đề</h2>
+    <ul class="list">
+      <% categories.forEach(function (c) { %>
+        <li class="card cat">
+          <a class="title" href="/c/<%= c.slug %>"><%= c.name %></a>
+          <div class="meta"><%= c.description %></div>
+          <div class="count"><%= c.post_count %> bài</div>
+        </li>
+      <% }) %>
+    </ul>
+  </aside>
+</div>
+<%- include('partials/footer') %>

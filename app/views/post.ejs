@@ -1,0 +1,36 @@
+<%- include('partials/header') %>
+<p class="crumbs"><a href="/">Trang chủ</a> › <a href="/c/<%= post.slug %>"><%= post.category %></a></p>
+<article class="card post">
+  <h1><%= post.title %></h1>
+  <div class="meta">bởi <b><%= post.username %></b> · <%= new Date(post.created_at).toLocaleString('vi-VN') %> · 👁 <%= post.views %> lượt xem</div>
+  <div class="content"><%= post.content %></div>
+  <% if (user && (user.id === post.user_id || user.role === 'admin')) { %>
+    <form action="/p/<%= post.id %>/delete" method="post" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="btn btn-danger">Xóa bài viết</button>
+    </form>
+  <% } %>
+</article>
+
+<h2 id="comments">Bình luận (<%= comments.length %>)</h2>
+<ul class="list">
+  <% comments.forEach(function (c) { %>
+    <li class="card comment">
+      <div class="meta"><b><%= c.username %></b> · <%= new Date(c.created_at).toLocaleString('vi-VN') %></div>
+      <div class="content"><%= c.content %></div>
+    </li>
+  <% }) %>
+</ul>
+
+<% if (user) { %>
+  <form class="card form" action="/p/<%= post.id %>/comments" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Viết bình luận
+      <textarea name="content" rows="4" required minlength="2" maxlength="5000"></textarea>
+    </label>
+    <button class="btn btn-primary">Gửi bình luận</button>
+  </form>
+<% } else { %>
+  <p class="muted"><a href="/login">Đăng nhập</a> để bình luận.</p>
+<% } %>
+<%- include('partials/footer') %>

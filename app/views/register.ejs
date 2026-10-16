@@ -1,0 +1,14 @@
+<%- include('partials/header') %>
+<div class="narrow">
+  <h1>Đăng ký thành viên</h1>
+  <% if (error) { %><div class="flash flash-warn"><%= error %></div><% } %>
+  <form class="card form" action="/register" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Tên đăng nhập <input name="username" required pattern="[A-Za-z0-9_]{3,30}" value="<%= form.username || '' %>"></label>
+    <label>Email <input type="email" name="email" required value="<%= form.email || '' %>"></label>
+    <label>Mật khẩu <input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <p class="hint">Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường và số.</p>
+    <button class="btn btn-primary">Đăng ký</button>
+  </form>
+</div>
+<%- include('partials/footer') %>

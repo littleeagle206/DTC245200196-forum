@@ -1,0 +1,18 @@
+<%- include('partials/header') %>
+<h1>Tìm kiếm</h1>
+<form class="card form row" action="/search" method="get">
+  <input name="q" value="<%= q %>" maxlength="100" placeholder="Nhập từ khóa...">
+  <button class="btn btn-primary">Tìm</button>
+</form>
+<% if (q) { %>
+  <p class="muted"><%= posts.length %> kết quả cho “<%= q %>”</p>
+  <ul class="list">
+    <% posts.forEach(function (p) { %>
+      <li class="card">
+        <a class="title" href="/p/<%= p.id %>"><%= p.title %></a>
+        <div class="meta"><%= p.category %> · bởi <b><%= p.username %></b> · <%= new Date(p.created_at).toLocaleString('vi-VN') %></div>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>
+<%- include('partials/footer') %>

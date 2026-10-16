@@ -1,0 +1,14 @@
+<%- include('partials/header') %>
+<p class="crumbs"><a href="/">Trang chủ</a> › <%= category.name %></p>
+<h1><%= category.name %></h1>
+<p class="muted"><%= category.description %></p>
+<% if (!posts.length) { %><p class="muted">Chủ đề này chưa có bài viết.</p><% } %>
+<ul class="list">
+  <% posts.forEach(function (p) { %>
+    <li class="card">
+      <a class="title" href="/p/<%= p.id %>"><%= p.title %></a>
+      <div class="meta">bởi <b><%= p.username %></b> · <%= new Date(p.created_at).toLocaleString('vi-VN') %> · 👁 <%= p.views %> · 💬 <%= p.comment_count %></div>
+    </li>
+  <% }) %>
+</ul>
+<%- include('partials/footer') %>

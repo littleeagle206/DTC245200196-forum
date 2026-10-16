@@ -1,0 +1,13 @@
+<%- include('partials/header') %>
+<div class="narrow">
+  <h1>Đăng nhập</h1>
+  <% if (error) { %><div class="flash flash-warn"><%= error %></div><% } %>
+  <form class="card form" action="/login" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Tên đăng nhập <input name="username" required autocomplete="username" value="<%= form.username || '' %>"></label>
+    <label>Mật khẩu <input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="btn btn-primary">Đăng nhập</button>
+  </form>
+  <p class="muted">Chưa có tài khoản? <a href="/register">Đăng ký</a></p>
+</div>
+<%- include('partials/footer') %>
