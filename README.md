@@ -44,8 +44,8 @@ Website diễn đàn (chủ đề, bài viết, bình luận, người dùng) đ
 Yêu cầu: Ubuntu 22.04/24.04 (máy ảo), Docker Engine + Docker Compose v2, RAM máy ảo ≥ 4 GB.
 
 ```bash
-git clone https://github.com/<tai-khoan>/<ten-repo>.git
-cd <ten-repo>
+git clone https://github.com/littleeagle206/DTC245200196-forum.git
+cd forum
 bash scripts/setup.sh          # tạo .env (mật khẩu ngẫu nhiên), chứng chỉ HTTPS, htpasswd
 docker compose up -d --build   # chạy toàn bộ (lần đầu mất vài phút để tải image)
 docker compose ps              # kiểm tra trạng thái
